@@ -16,12 +16,8 @@ export default function PoolCheckerForm() {
   const theme = useTheme();
   const router = useRouter();
 
-  const [poolAddress, setPoolAddress] = useState(
-    "0x32296969ef14eb0c6d29669c550d4a0449130230"
-  );
-  const [balancerPoolId, setBalancerPoolId] = useState(
-    "0x32296969ef14eb0c6d29669c550d4a0449130230000200000000000000000080"
-  );
+  const [poolAddress, setPoolAddress] = useState("");
+  const [balancerPoolId, setBalancerPoolId] = useState("");
 
   const handlePoolCheckerClick = () => {
     if (!poolAddress || !balancerPoolId) {

@@ -1,10 +1,25 @@
 import PoolDetailsComponent from "@/components/PoolDetailsComponent";
 import getPoolData from "@/lib/fetcher";
-import { Box } from "@mui/material";
+import { Alert, Box, Button, useTheme } from "@mui/material";
 import { GetServerSideProps } from "next";
 import Head from "next/head";
+import Link from "next/link";
 
-export default function PoolDetails({ dataDump }) {
+export default function PoolDetails({ dataDump, error }) {
+  const theme = useTheme();
+
+  if (!dataDump)
+    return <Box sx={{textAlign: 'center'}}>
+    {
+      error.map((e: string) => (
+        <Alert sx={{marginTop: theme.spacing(5)}} key={e} severity="error">
+          {e}
+        </Alert>
+      ))
+    }
+    <Button sx={{marginTop: theme.spacing(2) }} variant="contained" href="/" component={Link}>Go Home</Button>
+    </Box>
+
   return (
     <>
       <Head>
@@ -21,7 +36,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const pool = context.query.pool;
 
   if (!Array.isArray(pool)) {
-    return { props: { dataDump: null, error: [] } };
+    return {
+      props: {
+        dataDump: null,
+        error: ["Pool address or Balancer pool is missing"],
+      },
+    };
   }
 
   const [poolAddress, balancerPoolId] = pool;
@@ -37,6 +57,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const res = await getPoolData(BAL_TYPE, poolAddress, balancerPoolId);
     return { props: { dataDump: JSON.parse(JSON.stringify(res)), error: [] } };
   } catch (error) {
-    return { props: { dataDump: null, error: [] } };
+    return { props: { dataDump: null, error: [error.message] } };
   }
 };
