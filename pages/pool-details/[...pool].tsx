@@ -70,7 +70,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
     const res = await getPoolData(BAL_TYPE, poolAddress, balancerPoolId);
     return { props: { dataDump: JSON.parse(JSON.stringify(res)), error: [] } };
-  } catch (error) {
-    return { props: { dataDump: null, error: [error.message] } };
+  } catch (error: any) {
+    return { props: { dataDump: null, error: [JSON.stringify(error.message)] } };
   }
 };

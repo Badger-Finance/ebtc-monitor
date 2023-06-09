@@ -75,7 +75,7 @@ export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
                     {toTitleCase(key)}
                   </TableCell>
                   <TableCell>
-                    {parseValue(key)}
+                    {parseValue(key as keyof PoolData)}
                   </TableCell>
                 </TableRow>
               ))}
