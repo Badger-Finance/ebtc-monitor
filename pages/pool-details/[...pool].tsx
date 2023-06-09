@@ -1,24 +1,38 @@
 import PoolDetailsComponent from "@/components/PoolDetailsComponent";
 import getPoolData from "@/lib/fetcher";
+import { PoolData } from "@/lib/liquidation";
 import { Alert, Box, Button, useTheme } from "@mui/material";
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Link from "next/link";
 
-export default function PoolDetails({ dataDump, error }) {
+export interface DataDumpType {
+  dataDump: PoolData;
+}
+export interface PoolDetailsProps extends DataDumpType {
+  error: string[];
+}
+export default function PoolDetails({ dataDump, error }: PoolDetailsProps) {
   const theme = useTheme();
 
   if (!dataDump)
-    return <Box sx={{textAlign: 'center'}}>
-    {
-      error.map((e: string) => (
-        <Alert sx={{marginTop: theme.spacing(5)}} key={e} severity="error">
-          {e}
-        </Alert>
-      ))
-    }
-    <Button sx={{marginTop: theme.spacing(2) }} variant="contained" href="/" component={Link}>Go Home</Button>
-    </Box>
+    return (
+      <Box sx={{ textAlign: "center" }}>
+        {error.map((e: string) => (
+          <Alert sx={{ marginTop: theme.spacing(5) }} key={e} severity="error">
+            {e}
+          </Alert>
+        ))}
+        <Button
+          sx={{ marginTop: theme.spacing(2) }}
+          variant="contained"
+          href="/"
+          component={Link}
+        >
+          Go Home
+        </Button>
+      </Box>
+    );
 
   return (
     <>

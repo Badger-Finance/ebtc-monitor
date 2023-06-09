@@ -1,4 +1,5 @@
-import computeLiquidationData, { LiquidationData } from "@/lib/liquidation";
+import computeLiquidationData, { LiquidationData, PoolData } from "@/lib/liquidation";
+import { DataDumpType } from "@/pages/pool-details/[...pool]";
 import { toTitleCase } from "@/utility/string";
 import {
   Box,
@@ -18,19 +19,7 @@ import {
 } from "@mui/material";
 import { useMemo, useState } from "react";
 
-const parseValue = (attribute: string, data: unknown) => {
-  switch (attribute) {
-    case "poolType":
-      return toTitleCase(JSON.parse(JSON.stringify(String(data))));
-    case "isStable":
-      const val = Boolean(JSON.parse(JSON.stringify(String(data))));
-      return val ? "Yes" : "No";
-    default:
-      return JSON.stringify(data);
-  }
-};
-
-export default function PoolDetailsComponent({ dataDump }) {
+export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
   const theme = useTheme();
 
   const [toSell, setToSell] = useState(1e21);
@@ -49,6 +38,18 @@ export default function PoolDetailsComponent({ dataDump }) {
         : null,
     [toSell, liquidationPremium, 18, dataDump, secondsForPoolRefill]
   );
+
+  const parseValue = (key: keyof PoolData) => {
+    switch (key) {
+      case "poolType":
+        return toTitleCase(JSON.parse(JSON.stringify(String(dataDump[key]))));
+      case "isStable":
+        const val = Boolean(JSON.parse(JSON.stringify(String(dataDump[key]))));
+        return val ? "Yes" : "No";
+      default:
+        return JSON.stringify(dataDump[key]);
+    }
+  };
 
   return (
     <>
@@ -74,7 +75,7 @@ export default function PoolDetailsComponent({ dataDump }) {
                     {toTitleCase(key)}
                   </TableCell>
                   <TableCell>
-                    {parseValue(key, (dataDump)[key])}
+                    {parseValue(key)}
                   </TableCell>
                 </TableRow>
               ))}
