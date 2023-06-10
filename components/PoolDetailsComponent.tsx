@@ -1,5 +1,9 @@
-import computeLiquidationData, { LiquidationData, PoolData } from "@/lib/liquidation";
+import computeLiquidationData, {
+  LiquidationData,
+  PoolData,
+} from "@/lib/liquidation";
 import { DataDumpType } from "@/pages/pool-details/[...pool]";
+import { isBigNumber, isObject } from "@/utility";
 import { toTitleCase } from "@/utility/string";
 import {
   Box,
@@ -26,7 +30,7 @@ export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
   const [liquidationPremium, setLiquidationPremium] = useState(300);
   const [secondsForPoolRefill, setSecondsForPoolRefill] = useState(60 * 60);
 
-  const data: LiquidationData | null = useMemo(
+  const liquidationData: LiquidationData | null = useMemo(
     // We know it's defined
     () =>
       // @ts-ignore
@@ -39,25 +43,10 @@ export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
     [toSell, liquidationPremium, 18, dataDump, secondsForPoolRefill]
   );
 
-  const parseValue = (key: keyof PoolData) => {
-    switch (key) {
-      case "poolType":
-        return toTitleCase(JSON.parse(JSON.stringify(String(dataDump[key]))));
-      case "isStable":
-        const val = Boolean(JSON.parse(JSON.stringify(String(dataDump[key]))));
-        return val ? "Yes" : "No";
-      default:
-        return JSON.stringify(dataDump[key]);
-    }
-  };
-
-  return (
-    <>
-      <Box sx={{ marginTop: theme.spacing(4) }}>
-        <Typography gutterBottom variant="h2">
-          Pool Details
-        </Typography>
-        <TableContainer component={Card}>
+  const renderData = (data: any) => {
+    if (isObject(data)) {
+      return (
+        <TableContainer component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="Pool details">
             <TableHead>
               <TableRow>
@@ -66,22 +55,38 @@ export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {Object.keys((dataDump)).map((key) => (
-                <TableRow
-                  key={key}
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                >
-                  <TableCell component="th" scope="row">
-                    {toTitleCase(key)}
-                  </TableCell>
-                  <TableCell>
-                    {parseValue(key as keyof PoolData)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {Object.keys(data).map((key) => {
+                return (
+                  <TableRow
+                    key={key}
+                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      {toTitleCase(key)}
+                    </TableCell>
+                    <TableCell>
+                      {isObject(data[key]) && !isBigNumber(data[key])
+                        ? renderData(data[key])
+                        : JSON.stringify(data[key])}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
+      );
+    }
+    return <></>;
+  };
+
+  return (
+    <>
+      <Box sx={{ marginTop: theme.spacing(4) }}>
+        <Typography gutterBottom variant="h2">
+          Pool Details
+        </Typography>
+        {renderData(dataDump)}
       </Box>
 
       {/* Liquidity to Allow */}
@@ -255,9 +260,10 @@ export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
         {/* Seconds For Pool Replenishment */}
 
         <Box marginTop={theme.spacing(8)} marginBottom={theme.spacing(8)}>
-          <Paper variant="outlined" sx={{ padding: theme.spacing(2) }}>
-            {JSON.stringify(data)}
-          </Paper>
+          <Typography gutterBottom variant="h2">
+            Liquidation Data
+          </Typography>
+          {renderData(liquidationData)}
         </Box>
       </Box>
     </>

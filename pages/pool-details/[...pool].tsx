@@ -1,10 +1,9 @@
+import ErrorComponent from "@/components/ErrorComponent";
 import PoolDetailsComponent from "@/components/PoolDetailsComponent";
 import getPoolData from "@/lib/fetcher";
 import { PoolData } from "@/lib/liquidation";
-import { Alert, Box, Button, useTheme } from "@mui/material";
 import { GetServerSideProps } from "next";
 import Head from "next/head";
-import Link from "next/link";
 
 export interface DataDumpType {
   dataDump: PoolData;
@@ -13,26 +12,8 @@ export interface PoolDetailsProps extends DataDumpType {
   error: string[];
 }
 export default function PoolDetails({ dataDump, error }: PoolDetailsProps) {
-  const theme = useTheme();
-
-  if (!dataDump)
-    return (
-      <Box sx={{ textAlign: "center" }}>
-        {error.map((e: string) => (
-          <Alert sx={{ marginTop: theme.spacing(5) }} key={e} severity="error">
-            {e}
-          </Alert>
-        ))}
-        <Button
-          sx={{ marginTop: theme.spacing(2) }}
-          variant="contained"
-          href="/"
-          component={Link}
-        >
-          Go Home
-        </Button>
-      </Box>
-    );
+  
+  if (!dataDump) return <ErrorComponent error={error} />
 
   return (
     <>
@@ -45,6 +26,7 @@ export default function PoolDetails({ dataDump, error }: PoolDetailsProps) {
   );
 }
 
+
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const BAL_TYPE = "Balancer";
   const pool = context.query.pool;
@@ -53,13 +35,16 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     return {
       props: {
         dataDump: null,
-        error: ["Pool address or Balancer pool is missing"],
+        error: ["Pool address or Balancer pool id is missing"],
       },
     };
   }
 
   const [poolAddress, balancerPoolId] = pool;
 
+  /**
+   * Return error if either pool address or balancer pool id is missing
+   */
   if (!poolAddress || !balancerPoolId) {
     const error = [];
     if (!poolAddress) error.push("Pool address is missing!");
