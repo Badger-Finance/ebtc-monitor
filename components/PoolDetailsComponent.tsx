@@ -4,6 +4,7 @@ import computeLiquidationData, {
 } from "@/lib/liquidation";
 import { DataDumpType } from "@/pages/pool-details/[...pool]";
 import { isBigNumber, isObject } from "@/utility";
+import { convertBigNumberToNormal, convertToScientificNotation } from "@/utility/number";
 import { toTitleCase } from "@/utility/string";
 import {
   Box,
@@ -20,11 +21,18 @@ import {
   Button,
   Paper,
   useTheme,
+  Grid,
+  Switch,
+  FormControlLabel,
+  Chip,
 } from "@mui/material";
 import { useMemo, useState } from "react";
 
 export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
   const theme = useTheme();
+
+  const [poolDetailsSwitch, setPoolDetailsSwitch] = useState(false);
+  const [liquidationDataSwitch, setLiquidationDataSwitch] = useState(false);
 
   const [toSell, setToSell] = useState(1e21);
   const [liquidationPremium, setLiquidationPremium] = useState(300);
@@ -67,6 +75,28 @@ export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
                     <TableCell>
                       {isObject(data[key]) && !isBigNumber(data[key])
                         ? renderData(data[key])
+                        : isBigNumber(data[key])
+                        ? `${convertToScientificNotation(convertBigNumberToNormal(data[key]))} ETH`
+                        : Array.isArray(data[key])
+                        ? data[key].map((val: any, index: number) => {
+                            return isBigNumber(val) ? (
+                              <Chip
+                                key={index}
+                                variant="outlined"
+                                label={`${convertToScientificNotation(
+                                  convertBigNumberToNormal(val)
+                                )} ETH`}
+                                sx={{ marginRight: theme.spacing(2) }}
+                              />
+                            ) : (
+                              <Chip
+                                key={index}
+                                variant="outlined"
+                                label={JSON.stringify(val)}
+                                sx={{ marginRight: theme.spacing(2) }}
+                              />
+                            );
+                          })
                         : JSON.stringify(data[key])}
                     </TableCell>
                   </TableRow>
@@ -83,10 +113,33 @@ export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
   return (
     <>
       <Box sx={{ marginTop: theme.spacing(4) }}>
-        <Typography gutterBottom variant="h2">
-          Pool Details
-        </Typography>
-        {renderData(dataDump)}
+        <Grid container display="flex">
+          <Grid item xs={10}>
+            <Typography gutterBottom variant="h2">
+              Pool Details
+            </Typography>
+          </Grid>
+          <Grid xs={2} display="flex" justifyContent="flex-end">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={poolDetailsSwitch}
+                  onChange={(event) =>
+                    setPoolDetailsSwitch(event.target.checked)
+                  }
+                />
+              }
+              label={poolDetailsSwitch ? "JSON View" : "Table View"}
+            />
+          </Grid>
+        </Grid>
+        {!poolDetailsSwitch ? (
+          renderData(dataDump)
+        ) : (
+          <Paper variant="outlined" sx={{ padding: theme.spacing(2) }}>
+            {JSON.stringify(dataDump)}
+          </Paper>
+        )}
       </Box>
 
       {/* Liquidity to Allow */}
@@ -260,10 +313,34 @@ export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
         {/* Seconds For Pool Replenishment */}
 
         <Box marginTop={theme.spacing(8)} marginBottom={theme.spacing(8)}>
-          <Typography gutterBottom variant="h2">
-            Liquidation Data
-          </Typography>
-          {renderData(liquidationData)}
+          <Grid container display="flex">
+            <Grid item xs={10}>
+              <Typography gutterBottom variant="h2">
+                Liquidation Data
+              </Typography>
+            </Grid>
+            <Grid xs={2} display="flex" justifyContent="flex-end">
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={liquidationDataSwitch}
+                    onChange={(event) =>
+                      setLiquidationDataSwitch(event.target.checked)
+                    }
+                  />
+                }
+                label={liquidationDataSwitch ? "JSON View" : "Table View"}
+              />
+            </Grid>
+          </Grid>
+
+          {!liquidationDataSwitch ? (
+            renderData(liquidationData)
+          ) : (
+            <Paper variant="outlined" sx={{ padding: theme.spacing(2) }}>
+              {JSON.stringify(liquidationData)}
+            </Paper>
+          )}
         </Box>
       </Box>
     </>
