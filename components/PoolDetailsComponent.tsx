@@ -1,5 +1,10 @@
-import computeLiquidationData, { LiquidationData, PoolData } from "@/lib/liquidation";
+import computeLiquidationData, {
+  LiquidationData,
+  PoolData,
+} from "@/lib/liquidation";
 import { DataDumpType } from "@/pages/pool-details/[...pool]";
+import { isBigNumber, isObject } from "@/utility";
+import { convertBigNumberToNormal, convertToScientificNotation } from "@/utility/number";
 import { toTitleCase } from "@/utility/string";
 import {
   Box,
@@ -16,17 +21,24 @@ import {
   Button,
   Paper,
   useTheme,
+  Grid,
+  Switch,
+  FormControlLabel,
+  Chip,
 } from "@mui/material";
 import { useMemo, useState } from "react";
 
 export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
   const theme = useTheme();
 
+  const [poolDetailsSwitch, setPoolDetailsSwitch] = useState(false);
+  const [liquidationDataSwitch, setLiquidationDataSwitch] = useState(false);
+
   const [toSell, setToSell] = useState(1e21);
   const [liquidationPremium, setLiquidationPremium] = useState(300);
   const [secondsForPoolRefill, setSecondsForPoolRefill] = useState(60 * 60);
 
-  const data: LiquidationData | null = useMemo(
+  const liquidationData: LiquidationData | null = useMemo(
     // We know it's defined
     () =>
       // @ts-ignore
@@ -39,25 +51,10 @@ export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
     [toSell, liquidationPremium, 18, dataDump, secondsForPoolRefill]
   );
 
-  const parseValue = (key: keyof PoolData) => {
-    switch (key) {
-      case "poolType":
-        return toTitleCase(JSON.parse(JSON.stringify(String(dataDump[key]))));
-      case "isStable":
-        const val = Boolean(JSON.parse(JSON.stringify(String(dataDump[key]))));
-        return val ? "Yes" : "No";
-      default:
-        return JSON.stringify(dataDump[key]);
-    }
-  };
-
-  return (
-    <>
-      <Box sx={{ marginTop: theme.spacing(4) }}>
-        <Typography gutterBottom variant="h2">
-          Pool Details
-        </Typography>
-        <TableContainer component={Card}>
+  const renderData = (data: any) => {
+    if (isObject(data)) {
+      return (
+        <TableContainer component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="Pool details">
             <TableHead>
               <TableRow>
@@ -66,22 +63,83 @@ export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {Object.keys((dataDump)).map((key) => (
-                <TableRow
-                  key={key}
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                >
-                  <TableCell component="th" scope="row">
-                    {toTitleCase(key)}
-                  </TableCell>
-                  <TableCell>
-                    {parseValue(key as keyof PoolData)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {Object.keys(data).map((key) => {
+                return (
+                  <TableRow
+                    key={key}
+                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      {toTitleCase(key)}
+                    </TableCell>
+                    <TableCell>
+                      {isObject(data[key]) && !isBigNumber(data[key])
+                        ? renderData(data[key])
+                        : isBigNumber(data[key])
+                        ? `${convertToScientificNotation(convertBigNumberToNormal(data[key]))} ETH`
+                        : Array.isArray(data[key])
+                        ? data[key].map((val: any, index: number) => {
+                            return isBigNumber(val) ? (
+                              <Chip
+                                key={index}
+                                variant="outlined"
+                                label={`${convertToScientificNotation(
+                                  convertBigNumberToNormal(val)
+                                )} ETH`}
+                                sx={{ marginRight: theme.spacing(2) }}
+                              />
+                            ) : (
+                              <Chip
+                                key={index}
+                                variant="outlined"
+                                label={JSON.stringify(val)}
+                                sx={{ marginRight: theme.spacing(2) }}
+                              />
+                            );
+                          })
+                        : JSON.stringify(data[key])}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
+      );
+    }
+    return <></>;
+  };
+
+  return (
+    <>
+      <Box sx={{ marginTop: theme.spacing(4) }}>
+        <Grid container display="flex">
+          <Grid item xs={10}>
+            <Typography gutterBottom variant="h2">
+              Pool Details
+            </Typography>
+          </Grid>
+          <Grid xs={2} display="flex" justifyContent="flex-end">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={poolDetailsSwitch}
+                  onChange={(event) =>
+                    setPoolDetailsSwitch(event.target.checked)
+                  }
+                />
+              }
+              label={poolDetailsSwitch ? "JSON View" : "Table View"}
+            />
+          </Grid>
+        </Grid>
+        {!poolDetailsSwitch ? (
+          renderData(dataDump)
+        ) : (
+          <Paper variant="outlined" sx={{ padding: theme.spacing(2) }}>
+            {JSON.stringify(dataDump)}
+          </Paper>
+        )}
       </Box>
 
       {/* Liquidity to Allow */}
@@ -255,9 +313,34 @@ export default function PoolDetailsComponent({ dataDump }: DataDumpType) {
         {/* Seconds For Pool Replenishment */}
 
         <Box marginTop={theme.spacing(8)} marginBottom={theme.spacing(8)}>
-          <Paper variant="outlined" sx={{ padding: theme.spacing(2) }}>
-            {JSON.stringify(data)}
-          </Paper>
+          <Grid container display="flex">
+            <Grid item xs={10}>
+              <Typography gutterBottom variant="h2">
+                Liquidation Data
+              </Typography>
+            </Grid>
+            <Grid xs={2} display="flex" justifyContent="flex-end">
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={liquidationDataSwitch}
+                    onChange={(event) =>
+                      setLiquidationDataSwitch(event.target.checked)
+                    }
+                  />
+                }
+                label={liquidationDataSwitch ? "JSON View" : "Table View"}
+              />
+            </Grid>
+          </Grid>
+
+          {!liquidationDataSwitch ? (
+            renderData(liquidationData)
+          ) : (
+            <Paper variant="outlined" sx={{ padding: theme.spacing(2) }}>
+              {JSON.stringify(liquidationData)}
+            </Paper>
+          )}
         </Box>
       </Box>
     </>
