@@ -14,7 +14,7 @@ export function convertBigNumberToNormal(bigNumber: {
   const decimal = BigInt(`0x${hex}`).toString();
 
   // Get the number of trailing zeros in the original BigNumber
-  const trailingZeros = hex.length - hex.trimEnd("0").length;
+  const trailingZeros = hex.length - hex.trimEnd().length;
 
   // Divide the decimal value by 10 raised to the power of trailing zeros
   const result = parseFloat(decimal) / Math.pow(10, trailingZeros);
